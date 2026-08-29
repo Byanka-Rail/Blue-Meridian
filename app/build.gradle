@@ -1,0 +1,31 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.bluemeridian.game'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.bluemeridian.game'
+        minSdk 29
+        targetSdk 35
+        versionCode 109209
+        versionName '1.9.209'
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix ''
+            versionNameSuffix ''
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+}
