@@ -10,8 +10,8 @@ android {
         applicationId 'com.bluemeridian.game'
         minSdk 29
         targetSdk 35
-        versionCode 109209
-        versionName '1.9.209'
+        versionCode 109227
+        versionName '1.9.227'
     }
 
     buildTypes {
