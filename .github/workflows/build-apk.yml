@@ -36,10 +36,10 @@ jobs:
         run: gradle --no-daemon assembleDebug
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk BLUE_MERIDIAN_v1.9.209.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk BLUE_MERIDIAN_v1.9.227.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BLUE_MERIDIAN_v1.9.209_APK
-          path: BLUE_MERIDIAN_v1.9.209.apk
+          name: BLUE_MERIDIAN_v1.9.227_APK
+          path: BLUE_MERIDIAN_v1.9.227.apk
