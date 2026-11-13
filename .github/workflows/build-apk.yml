@@ -25,11 +25,13 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
+      # ubuntu 러너에는 Android SDK 가 이미 있다. 별도 액션 없이 그대로 쓴다 (setup-android 액션이 깨져서 바꿈).
       - name: Install Android platform
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKM" || { echo "sdkmanager not found at $SDKM"; ls -la "$ANDROID_HOME" || true; exit 1; }
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Bundle Three.js for offline play
         run: python3 tools/prepare_assets.py
