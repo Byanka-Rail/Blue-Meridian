@@ -58,6 +58,8 @@ public class MainActivity extends Activity {
     private SharedPreferences prefs;
     private int bundledBuild = 0;
     private ValueCallback<Uri[]> filePathCallback;
+    private volatile boolean checking = false;
+    private long lastCheckMs = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,7 +86,7 @@ public class MainActivity extends Activity {
         s.setBuiltInZoomControls(false);
         s.setDisplayZoomControls(false);
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
-        s.setUserAgentString(s.getUserAgentString() + " BlueMeridianApp/1.9.228");
+        s.setUserAgentString(s.getUserAgentString() + " BlueMeridianApp/" + BuildConfig.VERSION_NAME);
 
         prefs = getSharedPreferences("bm_update", MODE_PRIVATE);
         bundledBuild = readBundledBuild();
@@ -179,15 +181,39 @@ public class MainActivity extends Activity {
         return Math.max(bundledBuild, prefs.getInt("current_build", 0));
     }
 
-    private void checkForUpdate() {
+    private void toast(final String msg, final boolean longer) {
+        runOnUiThread(() -> { if (!isFinishing()) Toast.makeText(MainActivity.this, msg, longer ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT).show(); });
+    }
+
+    private String currentVersionLabel() {
+        String v = prefs.getString("current_version", "");
+        if (!v.isEmpty() && prefs.getInt("current_build", 0) > bundledBuild) return v;
+        int b = bundledBuild;
+        return (b / 100000) + "." + ((b / 1000) % 100) + "." + (b % 1000);
+    }
+
+    // manual=true 면 "최신입니다" · 실패 이유까지 알려 준다. 자동 확인은 새 판이 있을 때만 말한다.
+    private void checkForUpdate() { checkForUpdate(false); }
+
+    private void checkForUpdate(final boolean manual) {
+        if (checking) { if (manual) toast("업데이트 확인 중입니다", false); return; }
+        checking = true;
+        lastCheckMs = System.currentTimeMillis();
+        if (manual) toast("업데이트 확인 중… (현재 v" + currentVersionLabel() + ")", false);
         new Thread(() -> {
+            String stage = "update.json";
             try {
                 JSONObject o = new JSONObject(new String(readUrl(UPDATE_JSON + "?_=" + System.currentTimeMillis(), 64 * 1024), StandardCharsets.UTF_8));
                 int build = o.optInt("build", 0);
                 String file = o.optString("file", "");
                 String version = o.optString("version", "");
                 String sha = o.optString("sha256", "").trim();
-                if (build <= currentBuild() || file.isEmpty()) return;
+                if (build <= currentBuild() || file.isEmpty()) {
+                    if (manual) toast("최신 버전입니다 · v" + currentVersionLabel(), false);
+                    return;
+                }
+                toast("새 버전 v" + version + " 받는 중… 게임은 계속 하셔도 됩니다", true);
+                stage = "게임 파일";
 
                 String url = file.startsWith("https://") ? file : RAW_BASE + URLEncoder.encode(file, "UTF-8").replace("+", "%20");
                 byte[] bytes = readUrl(url + "?_=" + System.currentTimeMillis(), MAX_GAME_BYTES);
@@ -212,7 +238,11 @@ public class MainActivity extends Activity {
                             .show();
                 });
             } catch (Exception e) {
-                // 네트워크 실패나 검증 실패는 게임 실행을 막지 않는다
+                // 네트워크 실패나 검증 실패는 게임 실행을 막지 않는다. 다만 새 판을 받던 중이거나 직접 확인한 경우엔 알려 준다.
+                if (manual || !"update.json".equals(stage))
+                    toast("업데이트 실패 (" + stage + ") · " + e.getMessage(), true);
+            } finally {
+                checking = false;
             }
         }).start();
     }
@@ -285,11 +315,32 @@ public class MainActivity extends Activity {
                     "for(var i=0;i<ids.length;i++){var e=document.getElementById(ids[i]);if(e&&(e.classList.contains('open')||getComputedStyle(e).display!=='none')){" +
                     "var b=e.querySelector('[id$=Close],#replayBack,#storyClose,#editorClose,#optionsClose,#specClose');if(b){b.click();return 'handled';}}}" +
                     "return 'none';}catch(e){return 'none';}})()", value -> {
-                if (value == null || !value.contains("handled")) MainActivity.this.finish();
+                if (value == null || !value.contains("handled")) showAppMenu();
             });
         } else {
             super.onBackPressed();
         }
+    }
+
+    // 뒤로가기(열린 창이 없을 때) → 앱 메뉴. 종료 확인을 겸하고, 여기서 업데이트를 직접 확인할 수 있다.
+    private void showAppMenu() {
+        if (isFinishing()) return;
+        String[] items = {"업데이트 확인", "게임 종료"};
+        new AlertDialog.Builder(MainActivity.this)
+                .setTitle("BLUE MERIDIAN · v" + currentVersionLabel())
+                .setItems(items, (d, which) -> {
+                    if (which == 0) checkForUpdate(true);
+                    else MainActivity.this.finish();
+                })
+                .setNegativeButton("계속하기", null)
+                .show();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 앱을 오래 백그라운드에 두었다가 돌아오면 다시 확인 (30분 간격)
+        if (prefs != null && lastCheckMs > 0 && System.currentTimeMillis() - lastCheckMs > 30L * 60L * 1000L) checkForUpdate(false);
     }
 
     @Override
@@ -310,6 +361,15 @@ public class MainActivity extends Activity {
     }
 
     private final class AndroidBridge {
+        // 게임 화면에서 부를 수 있는 업데이트 훅: BlueMeridianAndroid.checkUpdate() / BlueMeridianAndroid.appInfo()
+        @JavascriptInterface
+        public void checkUpdate() { runOnUiThread(() -> checkForUpdate(true)); }
+
+        @JavascriptInterface
+        public String appInfo() {
+            return "{\"app\":\"" + BuildConfig.VERSION_NAME + "\",\"game\":\"" + currentVersionLabel() + "\"}";
+        }
+
         @JavascriptInterface
         public void saveDataUrl(String requestedName, String dataUrl) {
             runOnUiThread(() -> {
