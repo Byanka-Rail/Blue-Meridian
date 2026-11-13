@@ -1,0 +1,116 @@
+name: Auto publish BLUE MERIDIAN update
+
+# 포병(FIRE DIRECTION LAB)과 같은 방식:
+#  - 저장소 최상위에 BLUE_MERIDIAN_v<판>.html 을 올린다  예) BLUE_MERIDIAN_v1.9.228.html
+#    (이름 뒤에 _VIEWER_PLATE 같은 설명을 붙여도 된다)
+#  - 앱용으로 고친다: Three.js CDN 주소 → 앱 안 파일(./three*.js), 안드로이드 다리(bmAndroidBridgeShim)가 없으면 붙인다
+#  - 가장 높은 판으로 update.json 을 갱신한다 (깔린 앱이 이 파일을 보고 새 판을 받는다)
+#  - 판 HTML 은 최근 10개만 남긴다
+#  - 내용이 바뀌면 판 번호를 올린다 (같은 번호면 기기에 업데이트가 안 뜬다)
+
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blue-meridian-update
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare HTML / refresh update.json / keep latest 10
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, re
+
+          rx = re.compile(r"^BLUE_MERIDIAN_v(\d+)\.(\d+)\.(\d+)(?:_[^/]*)?\.html$", re.I)
+          title_rx = re.compile(r"<title>[^<]*?v(\d+)\.(\d+)\.(\d+)", re.I)
+          CDN = {
+              "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js": "./three.module.min.js",
+              "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js": "./three.min.js",
+              "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.1/three.min.js": "./three.min.js",
+          }
+          SHIM_RX = re.compile(r'<script id="bmAndroidBridgeShim">.*?</script>', re.S)
+
+          found = []
+          for p in Path(".").glob("*.html"):
+              m = rx.match(p.name)
+              if m:
+                  found.append((tuple(map(int, m.groups())), p.name, p))
+
+          if not found:
+              print("판 HTML(BLUE_MERIDIAN_v*.html)이 최상위에 없어 아무것도 건드리지 않습니다.")
+              raise SystemExit(0)
+
+          found.sort(key=lambda x: (x[0], x[1]))
+          (major, minor, patch), _, game = found[-1]
+          if minor > 99 or patch > 999:
+              raise SystemExit("판 번호 칸이 너무 큽니다 — build 규칙(1.9.227 → 109227)이 깨집니다.")
+          version = f"{major}.{minor}.{patch}"
+
+          text = game.read_text(encoding="utf-8")
+          t = title_rx.search(text[:8192])
+          if not t or tuple(map(int, t.groups())) != (major, minor, patch):
+              raise SystemExit(f"{game.name}: <title> 판이 파일 이름 판(v{version})과 다릅니다.")
+
+          # 앱용으로 고치기
+          changed = False
+          for a, b in CDN.items():
+              if a in text:
+                  text = text.replace(a, b); changed = True
+          if "bmAndroidBridgeShim" not in text:
+              bundled = Path("app/src/main/assets/index.html").read_text(encoding="utf-8")
+              m = SHIM_RX.search(bundled)
+              if not m:
+                  raise SystemExit("앱 안 index.html 에서 bmAndroidBridgeShim 을 찾지 못했습니다.")
+              i = text.lower().rfind("</body>")
+              text = (text[:i] + m.group(0) + "\n" + text[i:]) if i >= 0 else (text + "\n" + m.group(0) + "\n")
+              changed = True
+              print("bmAndroidBridgeShim 을 붙였습니다.")
+          if changed:
+              game.write_text(text, encoding="utf-8")
+          if "cdn.jsdelivr.net/npm/three" in text or "cdnjs.cloudflare.com/ajax/libs/three" in text:
+              raise SystemExit(f"{game.name}: 아직 Three.js CDN 주소가 남아 있습니다 — 판이 바뀌었으면 워크플로 CDN 목록을 고칠 것.")
+
+          for _, _, old in found[:-10]:
+              print(f"remove {old.name}")
+              old.unlink()
+
+          build = major * 100_000 + minor * 1_000 + patch   # 기존 규칙: 1.9.227 -> 109227
+          data = {
+              "version": version,
+              "build": build,
+              "file": game.name,
+              "sha256": hashlib.sha256(game.read_bytes()).hexdigest(),
+              "notes": f"BLUE MERIDIAN v{version}",
+              "mandatory": False,
+          }
+          Path("update.json").write_text(
+              json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+          )
+          print(f"version = {version} · build = {build} · file = {game.name}")
+          PY
+
+      - name: Commit if changed
+        shell: bash
+        run: |
+          git add -A -- update.json 'BLUE_MERIDIAN_v*.html'
+          if git diff --cached --quiet; then
+            echo "already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: publish latest BLUE MERIDIAN update"
+          git push

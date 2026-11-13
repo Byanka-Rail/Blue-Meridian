@@ -10,12 +10,24 @@ android {
         applicationId 'com.bluemeridian.game'
         minSdk 29
         targetSdk 35
-        versionCode 109227
-        versionName '1.9.227'
+        versionCode 109228
+        versionName '1.9.228'
+    }
+
+    // 개인 설치용 고정 서명 키 — 빌드할 때마다 키가 바뀌면 덮어쓰기 설치가 막힌다.
+    // Play Store 배포용 키로 쓰지 말 것.
+    signingConfigs {
+        sideload {
+            storeFile file('bluemeridian-sideload.keystore')
+            storePassword 'bluemeridian'
+            keyAlias 'bluemeridian'
+            keyPassword 'bluemeridian'
+        }
     }
 
     buildTypes {
         debug {
+            signingConfig signingConfigs.sideload
             applicationIdSuffix ''
             versionNameSuffix ''
         }

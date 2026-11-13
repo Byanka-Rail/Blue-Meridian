@@ -1,3 +1,13 @@
+업데이트 올리는 법 (2026-11 · 포병과 같은 방식 · 앱 v1.9.228 부터)
+- 새 판을 BLUE_MERIDIAN_v<판>.html 이름으로 저장소 최상위에 올린다 (뒤에 _VIEWER_PLATE 같은 설명 가능)
+- <title> 의 vX.Y.Z 가 파일 이름 판과 같아야 한다 (다르면 워크플로가 멈춘다)
+- 워크플로가 Three.js CDN 주소를 앱 안 파일로 바꾸고, bmAndroidBridgeShim 이 없으면 붙인다
+- update.json 갱신 · 판 HTML 최근 10개만 유지
+- 깔린 앱은 켤 때 update.json 을 보고 새 판을 받는다. 주소가 같아 캠페인·설정은 유지된다
+- APK 는 앱 코드(app/**)를 바꿀 때만 새로 빌드된다
+- 서명 키는 app/bluemeridian-sideload.keystore 로 고정 — 다음 APK 부터 덮어쓰기 설치가 된다
+- 아래 옛 안내(HTML 을 APK 에 넣어 새 APK 빌드)는 더 이상 필요 없다
+
 BLUE MERIDIAN Android wrapper · v1.9.227
 
 무엇이 들어 있나
