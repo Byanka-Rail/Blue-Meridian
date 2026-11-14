@@ -1991,7 +1991,7 @@ window.__VF_THREE_SOURCE__='PENDING';
     window.__VF_THREE_BOOT_ERRORS__.push(msg);
     window.__VF_THREE_ERROR__=msg;
   };
-  const r185='https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js';
+  const r185='./three.module.min.js';
 
   try{
     const THREE=await import(r185);
@@ -2016,7 +2016,7 @@ window.__VF_THREE_SOURCE__='PENDING';
   try{
     await new Promise((resolve,reject)=>{
       const s=document.createElement('script');
-      s.src='https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js';
+      s.src='./three.min.js';
       s.onload=resolve;
       s.onerror=()=>reject(new Error('classic script network error'));
       document.head.appendChild(s);
@@ -29148,5 +29148,26 @@ drawAll();
 </script>
 
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"c34496c503034aa29213ee2c0f02b102","r":1}' crossorigin="anonymous"></script>
+<script id="bmAndroidBridgeShim">
+(()=>{
+  if(window.__BM_ANDROID_DOWNLOAD_SHIM__) return;
+  window.__BM_ANDROID_DOWNLOAD_SHIM__=true;
+  document.addEventListener('click', async (ev)=>{
+    try{
+      const a=ev.target && ev.target.closest ? ev.target.closest('a[download]') : null;
+      if(!a || !a.href || !a.href.startsWith('blob:') || !window.BlueMeridianAndroid) return;
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      const blob=await fetch(a.href).then(r=>r.blob());
+      const reader=new FileReader();
+      reader.onload=()=>{
+        try{ window.BlueMeridianAndroid.saveDataUrl(a.download||'BLUE_MERIDIAN_export.bin', String(reader.result||'')); }
+        catch(e){ console.error('Android export bridge',e); }
+      };
+      reader.readAsDataURL(blob);
+    }catch(e){ console.error('Android blob export',e); }
+  },true);
+})();
+</script>
 </body>
 </html>

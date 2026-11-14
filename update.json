@@ -1,8 +1,8 @@
 {
-  "version": "1.9.240",
-  "build": 109240,
-  "file": "BLUE_MERIDIAN_v1.9.240_SEASON_ONE_REBUILT.html",
-  "sha256": "a833aef9470e5ce6df8714a9434d74e8ab0c69ae5e272f4898740f3625141c3f",
-  "notes": "BLUE MERIDIAN v1.9.240",
+  "version": "1.9.242",
+  "build": 109242,
+  "file": "BLUE_MERIDIAN_v1.9.242_AUTO_COMMAND.html",
+  "sha256": "aa018407886d98c3b72e204b45c9b3b4ab2b8512a0f2d34495fea30a9a77bbf8",
+  "notes": "BLUE MERIDIAN v1.9.242",
   "mandatory": false
 }
