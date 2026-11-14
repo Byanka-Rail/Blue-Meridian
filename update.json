@@ -1,8 +1,8 @@
 {
-  "version": "1.9.242",
-  "build": 109242,
-  "file": "BLUE_MERIDIAN_v1.9.242_AUTO_COMMAND.html",
-  "sha256": "aa018407886d98c3b72e204b45c9b3b4ab2b8512a0f2d34495fea30a9a77bbf8",
-  "notes": "BLUE MERIDIAN v1.9.242",
+  "version": "1.9.246",
+  "build": 109246,
+  "file": "BLUE_MERIDIAN_v1.9.246_ANVIL.html",
+  "sha256": "b2daeb215bd2ed81df16f6ab03d97a305ef50be70ca21a3936753f955073f56e",
+  "notes": "BLUE MERIDIAN v1.9.246",
   "mandatory": false
 }
