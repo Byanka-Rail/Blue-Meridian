@@ -1,8 +1,8 @@
 {
-  "version": "1.9.264",
-  "build": 109264,
-  "file": "BLUE_MERIDIAN_v1.9.264_COMMAND_BRIEF.html",
-  "sha256": "ca62a4b787fcf668cabd7505eef0e7907f98baf8d646a1411657c680bec616a0",
-  "notes": "BLUE MERIDIAN v1.9.264",
+  "version": "1.9.265",
+  "build": 109265,
+  "file": "BLUE_MERIDIAN_v1.9.265_LABEL_DECLUTTER.html",
+  "sha256": "f15658def86ec8f877d68077240050d3e85a92b93045767f6a969fce11af7a7f",
+  "notes": "BLUE MERIDIAN v1.9.265",
   "mandatory": false
 }
