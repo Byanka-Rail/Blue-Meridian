@@ -1,8 +1,8 @@
 {
-  "version": "1.9.258",
-  "build": 109258,
-  "file": "BLUE_MERIDIAN_v1.9.258_THEATER_UI_DEEP_STRIKE.html",
-  "sha256": "598d3b4e553d44dac8834fb3dc420482230149fe45a6c2d6eaf8fd5d62983637",
-  "notes": "BLUE MERIDIAN v1.9.258",
+  "version": "1.9.260",
+  "build": 109260,
+  "file": "BLUE_MERIDIAN_v1.9.260_TACTICAL_VIEW.html",
+  "sha256": "ec4a0df388eb5b830a7d5f2a17e1883f078373ad56683f1e9d6689815f371c57",
+  "notes": "BLUE MERIDIAN v1.9.260",
   "mandatory": false
 }
